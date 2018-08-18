@@ -1,0 +1,118 @@
+﻿{
+  "$version" :  "1.0",
+  "issue": [
+    {
+      "redmine": "Subject",
+      "vsts": "/fields/System.Title"
+    },
+    {
+      "redmine": "Author",
+      "vsts": {
+        "property": "/fields/System.CreatedBy",
+        "fromsubproperty": "Id",
+        "tosubproperty": "id",
+        "addproperties": {
+          "type": "User"
+        }
+      }
+    },
+    {
+      "redmine": "Author",
+      "vsts": {
+        "property": "/fields/System.CreatedBy",
+        "fromsubproperty": "Id",
+        "tosubproperty": "id",
+        "addproperties": {
+          "type": "User"
+        }
+      }
+    },
+    {
+      "redmine": "AssignedTo",
+      "vsts": {
+        "property": "/fields/System.AssignedTo",
+        "fromsubproperty": "Id",
+        "tosubproperty": "id",
+        "addproperties": {
+          "type": "User"
+        }
+      }
+    },
+    {
+      "redmine": "Priority",
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Common.Priority",
+        "fromsubproperty": "Name",
+        "map": {
+          "Low": 4,
+          "Normal": 3,
+          "High": 3,
+          "Urgent": 2,
+          "Immediate": 1
+        }
+      }
+    },
+    {
+      "redmine": "StartDate",
+      "vsts": "/fields/Microsoft.VSTS.Scheduling.StartDate"
+    },
+    {
+      "redmine": "DueDate",
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Scheduling.DueDate",
+        "ignoreIfNull": true
+      }
+    },
+    {
+      "redmine": "CreatedOn",
+      "vsts": "/fields/System.CreatedDate"
+    },
+    {
+      "redmine": "UpdatedOn",
+      "vsts": "/fields/System.ChangedDate"
+    },
+    {
+      "redmine": "Status",
+      "vsts": {
+        "property": "/fields/System.State",
+        "fromsubproperty": "Name",
+        "map": {
+          "In Progress": "Active",
+          "Feedback": "Active",
+          "Approved": "Active",
+          "Tested": "Active",
+          "Rejected": "Closed"
+        }
+      }
+    },
+    {
+      "redmine": "Description",
+      "vsts": "/fields/System.Description"
+    },
+    {
+      "redmine": "EstimatedHours",
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate",
+        "type": "System.Double"
+      }
+    },
+    {
+      "redmine": "FixedVersion",
+      "vsts": {
+        "property": "/fields/System.IterationPath",
+        "fromsubproperty": "Name",
+        "patternValue": "Acme test\\{value}"
+      }
+    },
+    {
+      "redmine": "Category",
+      "vsts": {
+        "property": "/fields/System.AreaPath",
+        "fromsubproperty": "Name",
+        "map": {
+          "acme-tweety": "Acme test\\client-tweety"
+        }
+      }
+    }
+  ]
+}
