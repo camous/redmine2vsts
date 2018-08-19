@@ -1,20 +1,8 @@
 ﻿{
-  "$version" :  "1.0",
   "issue": [
     {
       "redmine": "Subject",
       "vsts": "/fields/System.Title"
-    },
-    {
-      "redmine": "Author",
-      "vsts": {
-        "property": "/fields/System.CreatedBy",
-        "fromsubproperty": "Id",
-        "tosubproperty": "id",
-        "addproperties": {
-          "type": "User"
-        }
-      }
     },
     {
       "redmine": "Author",
@@ -64,6 +52,13 @@
       }
     },
     {
+      "redmine": "ClosedOn",
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Common.ClosedDate",
+        "ignoreIfNull": true
+      }
+    },
+    {
       "redmine": "CreatedOn",
       "vsts": "/fields/System.CreatedDate"
     },
@@ -91,16 +86,18 @@
     },
     {
       "redmine": "EstimatedHours",
-      "vsts": {
-        "property": "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate",
-        "type": "System.Double"
-      }
+      "vsts": "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate"
+    },
+    {
+      "redmine": "SpentHours",
+      "vsts": "/fields/Microsoft.VSTS.Scheduling.CompletedWork"
     },
     {
       "redmine": "FixedVersion",
       "vsts": {
         "property": "/fields/System.IterationPath",
         "fromsubproperty": "Name",
+        "ignoreIfNull": true,
         "patternValue": "Acme test\\{value}"
       }
     },
@@ -110,7 +107,8 @@
         "property": "/fields/System.AreaPath",
         "fromsubproperty": "Name",
         "map": {
-          "acme-tweety": "Acme test\\client-tweety"
+          "acme-tweety": "Acme test\\client-tweety",
+          "$default": "Acme test"
         }
       }
     }
