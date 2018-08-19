@@ -1,0 +1,15 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="redminemigration.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="redmine_uri" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://redmine.xxxxx.com</Value>
+    </Setting>
+    <Setting Name="redmine_apikey" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">xxxxx</Value>
+    </Setting>
+    <Setting Name="redmine_internaluri" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://xx.xx.xx.xx</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
