@@ -11,7 +11,6 @@
         "fromsubproperty": "Id",
         "tosubproperty": "id",
         "addproperties": {
-          "lol": "User",
           "primary" :  true
         }
       }
