@@ -11,7 +11,8 @@
         "fromsubproperty": "Id",
         "tosubproperty": "id",
         "addproperties": {
-          "type": "User"
+          "lol": "User",
+          "primary" :  true
         }
       }
     },
@@ -21,8 +22,21 @@
         "property": "/fields/System.AssignedTo",
         "fromsubproperty": "Id",
         "tosubproperty": "id",
+        "ignoreIfNull" :  true,
         "addproperties": {
           "type": "User"
+        }
+      }
+    },
+    {
+      "redmine": "Tracker",
+      "vsts": {
+        "property": "Type",
+        "fromsubproperty": "Name",
+        "map": {
+          "Proposal": "Task",
+          "Support": "Task",
+          "Decision": "Task"
         }
       }
     },
@@ -42,7 +56,11 @@
     },
     {
       "redmine": "StartDate",
-      "vsts": "/fields/Microsoft.VSTS.Scheduling.StartDate"
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Scheduling.StartDate",
+        "ignoreIfNull" :  true
+      }
+
     },
     {
       "redmine": "DueDate",
@@ -86,11 +104,17 @@
     },
     {
       "redmine": "EstimatedHours",
-      "vsts": "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate"
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Scheduling.OriginalEstimate",
+        "ignoreIfNull": true
+      }
     },
     {
       "redmine": "SpentHours",
-      "vsts": "/fields/Microsoft.VSTS.Scheduling.CompletedWork"
+      "vsts": {
+        "property": "/fields/Microsoft.VSTS.Scheduling.CompletedWork",
+        "ignoreIfNull": true
+      }
     },
     {
       "redmine": "FixedVersion",
@@ -98,7 +122,15 @@
         "property": "/fields/System.IterationPath",
         "fromsubproperty": "Name",
         "ignoreIfNull": true,
-        "patternValue": "Acme test\\{value}"
+        "map": {
+          "Acme design & architecture": "ACME Core",
+          "ACME 4.0 Anvils / Solution BlueSales": "ACME 4.0 Anvils BlueSales",
+          "ACME 10.0 CMDB Bird Seed": "ACME 10.0 Bird Seed CMDB",
+          "BOSS Interface": "ACME 4.0 Anvils BlueSales",
+          "Blue Sales": "ACME 4.0 Anvils BlueSales",
+          "ACME Technical Debt": null
+        },
+        "patternValue": "Acme\\{value}"
       }
     },
     {
@@ -106,10 +138,32 @@
       "vsts": {
         "property": "/fields/System.AreaPath",
         "fromsubproperty": "Name",
+        "ignoreIfNull": true,
         "map": {
-          "acme-tweety": "Acme test\\client-tweety",
-          "$default": "Acme test"
-        }
+          "$default": "unknown",
+          "PMO": "org-pmo",
+          "VSTS": "infra-vsts",
+          "acme-aspirin": "tool-aspirin",
+          "acme-beans": "client-beans",
+          "acme-cecil": "client-cecil",
+          "acme-cortex": "client-cortex",
+          "acme-coyote": "client-coyote",
+          "acme-elmer": "client-elmer",
+          "acme-hugo": "client-hugo",
+          "acme-lib-common": "lib-common",
+          "acme-mapper": "lib-mapper",
+          "acme-saperp": "client-tweety",
+          "acme-slowpoke": "client-slowpoke",
+          "acme-sylvester": "client-sylvester",
+          "acme-taz": "tool-taz",
+          "acme-tweety": "client-tweety",
+          "acme-yosemitesam": "client-yosemitesam",
+          "infrastructure": "infra-azure",
+          "json-schema": "data-jsonschema",
+          "mapping-data": "data-mapping",
+          "monitoring": "tool-monitoring"
+        },
+        "patternValue": "Acme\\{value}"
       }
     }
   ]

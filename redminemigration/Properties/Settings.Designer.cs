@@ -12,7 +12,7 @@ namespace redminemigration.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.7.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.0.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -25,7 +25,7 @@ namespace redminemigration.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://redmine.xxxxx.com")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://redmine.XXXXXXXX.com")]
         public string redmine_uri {
             get {
                 return ((string)(this["redmine_uri"]));
@@ -34,7 +34,7 @@ namespace redminemigration.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("xxxxx")]
+        [global::System.Configuration.DefaultSettingValueAttribute("XXXXXXXXXX")]
         public string redmine_apikey {
             get {
                 return ((string)(this["redmine_apikey"]));
@@ -43,10 +43,46 @@ namespace redminemigration.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://xx.xx.xx.xx")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://ip:port")]
         public string redmine_internaluri {
             get {
                 return ((string)(this["redmine_internaluri"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://XXXXX.visualstudio.com")]
+        public string vsts_uri {
+            get {
+                return ((string)(this["vsts_uri"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Basic XXXXXXXXXXXXXXXXX")]
+        public string vsts_authorizationheader {
+            get {
+                return ((string)(this["vsts_authorizationheader"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("VSTS_PROJECTNAME")]
+        public string vsts_projectname {
+            get {
+                return ((string)(this["vsts_projectname"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public string redmine_projectid {
+            get {
+                return ((string)(this["redmine_projectid"]));
             }
         }
     }

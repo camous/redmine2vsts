@@ -16,84 +16,142 @@ namespace redminemigration
     {
         static Redmine.Net.Api.RedmineManager redmine = new Redmine.Net.Api.RedmineManager(Properties.Settings.Default.redmine_uri, Properties.Settings.Default.redmine_apikey);
         static Dictionary<string, Dictionary<int, object>> cache = new Dictionary<string, Dictionary<int, object>>();
+        static JObject correlationmap = new JObject();
+        static readonly string mapfilename = $"correlationmap_{Properties.Settings.Default.vsts_projectname}.json";
+        static readonly string project_id = Properties.Settings.Default.redmine_projectid;
 
         static void Main(string[] args)
         {
+            if (System.IO.File.Exists(mapfilename))
+            {
+                correlationmap = JObject.Parse(System.IO.File.ReadAllText(mapfilename));
+                if (correlationmap["exceptions"] != null)
+                    ((JObject)correlationmap["exceptions"]).ListChanged += Correlationmap_ListChanged;
+            }
+
+            correlationmap.ListChanged += Correlationmap_ListChanged;
             var mapper = new acmemapper.Mapper("redmine", "vsts");
 
-            var issue_id = "10866";//"10610"; 
-            var issue = redmine.GetObject<Issue>(issue_id, new System.Collections.Specialized.NameValueCollection { { "include", "children,attachments,relations,changesets,journals,watchers"} });
+            var issues = redmine.GetObjects<Issue>(new System.Collections.Specialized.NameValueCollection {
+                { "project_id", project_id},
+                { "status_id","*"},
+                { "sort", "id" } });           
 
-            System.IO.File.WriteAllText("redmine.json", JsonConvert.SerializeObject(issue, Formatting.Indented));
-
-            var mappedissue = mapper.Map<Issue, JObject>("issue", issue);
-
-            var vstsissue = mappedissue.Values<JProperty>().Select(x => new VSTSField { op = "add", path = x.Name, value =x.Value.ToObject<dynamic>() }).ToList();
-
-            // resolve dependencies
-            // all value of type JObject with a type property
-            var dependencies = vstsissue.Where(x => x.value is JObject);
-            foreach (var dependency in dependencies)
-                vstsissue.Single(x => x.path == dependency.path).value = ResolveDependency(dependency);
-
-            // rework description
-            var description = vstsissue.Single(x => x.path == "/fields/System.Description");
-            description.value = ((string)description.value).Replace("\n\n", "<br />");
-            description.value += $"<br /><br />--<br /> migrated from redmine {Properties.Settings.Default.redmine_uri}/issues/{issue.Id}";
-            description.value = ConvertUrlsToLinks(description.value);
-
-            // create history
-            string history = String.Empty;
-            foreach(var journal in issue.Journals)
+            foreach (var redmineissue in issues)
             {
-                var details = String.Empty;
-                foreach(var detail in journal.Details)
-                    details += $"<li>{detail.Name} : from \"{detail.OldValue ?? "undefined"}\" to \"{detail.NewValue ?? "undefined"}\"</li>";
+                if(correlationmap.ContainsKey(redmineissue.Id.ToString()))
+                {
+                    Trace.TraceInformation($"#{redmineissue.Id} already migrated");
+                    continue;
+                }
 
-                string v = (!String.IsNullOrEmpty(details) ? "<ul>" + details + "</ul>" : "");
-                history += $"<small>{journal.User.Name} on {journal.CreatedOn}</small><br />" + v + $"{ConvertUrlsToLinks(journal.Notes)}<br /><hr />";
+                var issue_id = redmineissue.Id.ToString();
+                var issue = redmine.GetObject<Issue>(issue_id, new System.Collections.Specialized.NameValueCollection {
+                    { "include", "children,attachments,relations,changesets,journals,watchers" } });
+
+                System.IO.File.WriteAllText($"./json/{redmineissue.Id}_redmine.json", JsonConvert.SerializeObject(issue, Formatting.Indented));
+
+                var mappedissue = mapper.Map<Issue, JObject>("issue", issue);
+
+                var workitemtype = mappedissue["Type"].Value<string>();
+                mappedissue.Remove("Type");
+
+                var vstsissue = mappedissue.Values<JProperty>().Select(x => new VSTSField {
+                    op = "add",
+                    path = x.Name,
+                    value = x.Value.ToObject<dynamic>() }).ToList();
+
+                // resolve dependencies
+                // all value of type JObject with a type property
+                var dependencies = vstsissue.Where(x => x.value is JObject);
+                foreach (var dependency in dependencies)
+                    vstsissue.Single(x => x.path == dependency.path).value = ResolveDependency(dependency);
+
+                // rework description
+                var description = vstsissue.Single(x => x.path == "/fields/System.Description");
+                description.value = ((string)description.value).Replace("\n", "<br />");
+                description.value += $"<br /><br />--<br /> migrated from redmine {Properties.Settings.Default.redmine_uri}/issues/{issue.Id}";
+                description.value = ConvertUrlsToLinks(description.value);
+
+                // create history
+                string history = String.Empty;
+                foreach (var journal in issue.Journals)
+                {
+                    var details = String.Empty;
+                    foreach (var detail in journal.Details)
+                        details += $"<li>{detail.Name} : from \"{detail.OldValue ?? "undefined"}\" to \"{detail.NewValue ?? "undefined"}\"</li>";
+
+                    string v = (!String.IsNullOrEmpty(details) ? "<ul>" + details + "</ul>" : "");
+                    history += $@"<small>{journal.User.Name} on {journal.CreatedOn}</small><br />" + v + ConvertUrlsToLinks(journal.Notes)?.Replace("\n","<br />") + "<br /><hr />";
+                }
+
+                // attachments
+                foreach (var attachment in issue.Attachments)
+                {
+                    var redmineattachmenturl = attachment.ContentUrl.Replace(Properties.Settings.Default.redmine_internaluri, Properties.Settings.Default.redmine_uri);
+                    Trace.TraceInformation($"downloading {redmineattachmenturl}");
+                    var body = redmine.DownloadFile(redmineattachmenturl);
+
+                    System.IO.File.WriteAllBytes($"./attachments/{redmineissue.Id}_{attachment.FileName}", body);
+
+                    var vstsurl = UploadVSTSAttachment(body, attachment.FileName, attachment.ContentType);
+                    vstsissue.Add(new VSTSField
+                    {
+                        op = "add",
+                        path = "/relations/-",
+                        value = new
+                        {
+                            rel = "AttachedFile",
+                            url = vstsurl,
+                            attributes = new { comment = attachment.Description }
+                        }
+                    });
+
+                    // do we have reference of this screenshot in description or history ?
+                    description.value = ((string)description.value).Replace($"!{attachment.FileName}!", $"<img src=\"{vstsurl}\" />");
+                    history = history.Replace($"!{attachment.FileName}!", $"<img src=\"{vstsurl}\" />");
+                }
+
+                if (!String.IsNullOrEmpty(history))
+                    vstsissue.Add(new VSTSField { op = "add", path = "/fields/System.History", value = history });
+
+                var bodypayload = JsonConvert.SerializeObject(vstsissue, Formatting.Indented);
+                System.IO.File.WriteAllText($"./json/{redmineissue.Id}_vstspayload.json", bodypayload);
+
+                var client = new RestClient($"{Properties.Settings.Default.vsts_uri}/{Properties.Settings.Default.vsts_projectname}/_apis/wit/workitems/${workitemtype}?bypassRules=True&api-version=4.1");
+                var request = new RestRequest(Method.POST);
+                request.AddHeader("Authorization", Properties.Settings.Default.vsts_authorizationheader);
+                request.AddHeader("Content-Type", "application/json-patch+json");
+                request.AddParameter("undefined", bodypayload, ParameterType.RequestBody);
+                IRestResponse response = client.Execute(request);
+
+                System.IO.File.WriteAllText($"./json/{redmineissue.Id}_vstsresponse.json", JsonConvert.SerializeObject(response.Content, Formatting.Indented));
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var jsonresponse = JObject.Parse(response.Content);
+                    correlationmap.Add(issue.Id.ToString(), jsonresponse["id"]); // we save the correlation between redmine & vsts for later usage (relation)
+                    Trace.TraceInformation($"#{issue.Id} {issue.Subject} migrated");
+                }
+                else
+                {
+                    if (correlationmap["exceptions"] == null)
+                    {
+                        correlationmap["exceptions"] = new JObject();
+                        ((JObject)correlationmap["exceptions"]).ListChanged += Correlationmap_ListChanged;
+                    }
+
+                    Trace.TraceWarning($"#{issue.Id} {issue.Subject} error");
+
+                    ((JObject)correlationmap["exceptions"]).Add(issue.Id.ToString(), response.Content);
+                }
+                
             }
+        }
 
-            // attachments
-            foreach (var attachment in issue.Attachments)
-            {
-                var redmineattachmenturl = attachment.ContentUrl.Replace(Properties.Settings.Default.redmine_internaluri, Properties.Settings.Default.redmine_uri);
-                Trace.TraceInformation($"downloading {redmineattachmenturl}");
-                var body = redmine.DownloadFile(redmineattachmenturl);
-
-                var vstsurl = UploadVSTSAttachment(body, attachment.FileName, attachment.ContentType);
-                vstsissue.Add(new VSTSField { op = "add", path = "/relations/-", value = new {
-                    rel = "AttachedFile",
-                    url = vstsurl,
-                    attributes = new { comment = attachment.Description }
-                } });
-
-                // do we have reference of this screenshot in description or history ?
-                description.value = ((string)description.value).Replace($"!{attachment.FileName}!", $"<img src=\"{vstsurl}\" />");
-                history = history.Replace($"!{attachment.FileName}!", $"<img src=\"{vstsurl}\" />");
-            }
-
-            if (!String.IsNullOrEmpty(history))
-                vstsissue.Add(new VSTSField { op = "add", path = "/fields/System.History", value = history });
-
-            var bodypayload = JsonConvert.SerializeObject(vstsissue,Formatting.Indented);
-            System.IO.File.WriteAllText("vstspayload.json", bodypayload);
-
-            var client = new RestClient("https://be4it.visualstudio.com/Acme%20test/_apis/wit/workitems/$Task?bypassRules=True&api-version=4.1");
-            var request = new RestRequest(Method.POST);
-            request.AddHeader("Authorization", "Basic dnVwdDd1bnBsYWhieGxidmh1c3ZjZGh3ZnJnZmR3anNpeXd6cnNqbG9jY250Z2RyZm5yYTo=");
-            request.AddHeader("Content-Type", "application/json-patch+json");
-            request.AddParameter("undefined", bodypayload, ParameterType.RequestBody);
-            IRestResponse response = client.Execute(request);
-
-            System.IO.File.WriteAllText("vsts.json", JsonConvert.SerializeObject(response.Content, Formatting.Indented));
-
-            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
-                throw new Exception(response.Content);
-
-
-
-            Console.ReadKey();
+        private static void Correlationmap_ListChanged(object sender, System.ComponentModel.ListChangedEventArgs e)
+        {
+            System.IO.File.WriteAllText(mapfilename, JsonConvert.SerializeObject(correlationmap, Formatting.Indented));
         }
 
         static object ResolveDependency(dynamic field)
@@ -111,18 +169,25 @@ namespace redminemigration
                 var assemblyname = typeof(User).AssemblyQualifiedName;
                 var type = Type.GetType(assemblyname.Replace("User", dependencyType));
 
-                var remoteresult = typeof(Redmine.Net.Api.RedmineManager)
-                    .GetMethod("GetObject").
-                    MakeGenericMethod(type).
-                    Invoke(redmine, new object[] { id.ToString(), null });
-                
-                switch (remoteresult)
+                try
                 {
-                    case User i:
-                        result = i.Email;
-                        break;
-                    default:
-                        throw new Exception($"{dependencyType} type not supported for dependency");
+                    var remoteresult = typeof(Redmine.Net.Api.RedmineManager)
+                        .GetMethod("GetObject").
+                        MakeGenericMethod(type).
+                        Invoke(redmine, new object[] { id.ToString(), null });
+
+                    switch (remoteresult)
+                    {
+                        case User i:
+                            result = i.Email;
+                            break;
+                        default:
+                            throw new Exception($"{dependencyType} type not supported for dependency");
+                    }
+
+                } catch(System.Reflection.TargetInvocationException ex)
+                {
+                    result = String.Empty;
                 }
 
                 if (!cache.ContainsKey(dependencyType))
@@ -136,13 +201,15 @@ namespace redminemigration
 
         static string UploadVSTSAttachment(byte[] content, string filename, string contentType)
         {
-            var client = new RestClient($"https://be4it.visualstudio.com/Acme%20test/_apis/wit/attachments?fileName={filename}&api-version=4.1");
+            var client = new RestClient($"{Properties.Settings.Default.vsts_uri}/{Properties.Settings.Default.vsts_projectname}/_apis/wit/attachments?fileName={filename}&api-version=4.1");
             var request = new RestRequest(Method.POST);
-            request.AddHeader("Authorization", "Basic dnVwdDd1bnBsYWhieGxidmh1c3ZjZGh3ZnJnZmR3anNpeXd6cnNqbG9jY250Z2RyZm5yYTo=");
+            request.AddHeader("Authorization", Properties.Settings.Default.vsts_authorizationheader);
             request.AddHeader("Content-Type", "application/octet-stream");
             request.AddParameter("undefined", content, ParameterType.RequestBody);
-            //request.AddFileBytes(filename, content, filename);
             IRestResponse response = client.Execute(request);
+
+            if (response.StatusCode != System.Net.HttpStatusCode.OK && response.StatusCode != System.Net.HttpStatusCode.Created)
+                throw new Exception($"error while downloading {filename} {response.StatusCode}");
 
             return JObject.Parse(response.Content)["url"].Value<string>();
         }

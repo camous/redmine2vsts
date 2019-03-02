@@ -3,13 +3,25 @@
   <Profiles />
   <Settings>
     <Setting Name="redmine_uri" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">https://redmine.xxxxx.com</Value>
+      <Value Profile="(Default)">https://redmine.XXXXXXXX.com</Value>
     </Setting>
     <Setting Name="redmine_apikey" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">xxxxx</Value>
+      <Value Profile="(Default)">XXXXXXXXXX</Value>
     </Setting>
     <Setting Name="redmine_internaluri" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">http://xx.xx.xx.xx</Value>
+      <Value Profile="(Default)">http://ip:port</Value>
+    </Setting>
+    <Setting Name="vsts_uri" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://XXXXX.visualstudio.com</Value>
+    </Setting>
+    <Setting Name="vsts_authorizationheader" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Basic XXXXXXXXXXXXXXXXX</Value>
+    </Setting>
+    <Setting Name="vsts_projectname" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">VSTS_PROJECTNAME</Value>
+    </Setting>
+    <Setting Name="redmine_projectid" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>
