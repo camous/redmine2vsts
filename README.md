@@ -128,4 +128,4 @@ Category have to exist in VSTS prior to migration. Below example, `$default` cat
         "patternValue": "Acme\\{value}"
       }
     }
-    ```
+```
