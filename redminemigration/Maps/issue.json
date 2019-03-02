@@ -11,7 +11,8 @@
         "fromsubproperty": "Id",
         "tosubproperty": "id",
         "addproperties": {
-          "primary" :  true
+          "type" :  "User",
+          "primary": true
         }
       }
     },
