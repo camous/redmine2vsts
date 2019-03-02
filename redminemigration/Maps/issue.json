@@ -35,7 +35,9 @@
         "map": {
           "Proposal": "Task",
           "Support": "Task",
-          "Decision": "Task"
+          "Decision": "Task",
+          "Feature" : "Feature",
+          "Bug" : "Bug"
         }
       }
     },
